@@ -1,0 +1,6 @@
+{
+  "name": "heroku-reco-app",
+  "description": "test",
+  "repository": "https://github.com/best-tech/heroku-reco-app",
+  "image": "heroku/nodejs"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "face-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^1.7.4",
+    "@types/node": "^13.13.5",
+    "canvas": "^2.6.1",
+    "express": "^4.17.1",
+    "face-api.js": "^0.22.2",
+    "log4js": "^6.2.1",
+    "node-fetch": "^2.6.0",
+    "typescript": "^3.8.3"
+  },
+  "devDependencies": {},
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "13.3.0"
+  }
+}
