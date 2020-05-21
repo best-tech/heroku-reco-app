@@ -9,7 +9,7 @@ const fetch = require('node-fetch')
 const log4js = require('log4js');
 
 const logger = log4js.getLogger(`RECO`);
-logger.level = 'debug';
+logger.level = 'info';
 
 const PORT = process.env.PORT || 5000;
 
@@ -25,35 +25,40 @@ const faceDetectionNet = faceapi.nets.tinyFaceDetector
 const minConfidence = 0.5;
 // TinyFaceDetectorOptions
 const inputSize = 416;
-const scoreThreshold = 0.5;
+let loaded = false
 
+const scoreThreshold = 0.5;
 function getFaceDetectorOptions(net) {
     return net === faceapi.nets.ssdMobilenetv1
         ? new faceapi.SsdMobilenetv1Options({minConfidence: minConfidence})
         : new faceapi.TinyFaceDetectorOptions({inputSize: inputSize, scoreThreshold: scoreThreshold});
+
 }
 
 const faceDetectionOptions = getFaceDetectorOptions(faceDetectionNet);
 
 async function loadModels() {
     if (loaded) return;
-    loaded = true
 
+    loaded = true
     logger.info('LOAD MODELS...')
+
     // await faceDetectionNet.loadFromDisk('./weights');
     // await faceapi.nets.faceLandmark68Net.loadFromDisk('./weights');
     // await faceapi.nets.ageGenderNet.loadFromDisk('./weights');
-
     // await faceDetectionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/ssd_mobilenetv1_model-weights_manifest.json');
     await faceDetectionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/tiny_face_detector_model-weights_manifest.json');
     await faceapi.nets.faceLandmark68Net.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/face_landmark_68_model-weights_manifest.json');
+
     await faceapi.nets.ageGenderNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/age_gender_model-weights_manifest.json');
+
+    await faceapi.nets.faceRecognitionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/face_recognition_model-weights_manifest.json')
 
 }
 
-async function getByUrl(url) {
-
+async function getByUrl(url, reco = false) {
     let img;
+
     try {
         img = await canvas.loadImage(url)
     } catch (e) {
@@ -61,25 +66,34 @@ async function getByUrl(url) {
         return
     }
 
-    const results = await faceapi.detectAllFaces(img, faceDetectionOptions)
-        .withFaceLandmarks()
-        .withAgeAndGender()
-
     const data = []
+    if (reco) {
+        const results = await faceapi.detectAllFaces(img, faceDetectionOptions)
+            .withFaceLandmarks()
+            .withFaceDescriptors()
 
-    let res = results.forEach(result => {
-        const {age, gender, genderProbability} = result
-        data.push({
-            age: age,
-            gender: gender,
-            genderProbability: genderProbability
+
+        results.forEach(result => {
+            const {age, gender, genderProbability} = result
+            data.push(result.descriptor)
         })
-    })
+    } else {
+        const results = await faceapi.detectAllFaces(img, faceDetectionOptions)
+            .withFaceLandmarks()
+            .withAgeAndGender()
+        results.forEach(result => {
+            const {age, gender, genderProbability} = result
+            data.push({
+                age: age,
+                gender: gender,
+                genderProbability: genderProbability
+            })
+        })
 
+    }
     return data;
-}
 
-let loaded = false
+}
 
 express()
     .get('/', async (req, res) => {
@@ -93,13 +107,13 @@ express()
 
             if (!loaded) await loadModels();
 
-            let data = await getByUrl(req.query.url)
+            let data = await getByUrl(req.query.url, req.query.reco)
 
             if (data === undefined) {
                 logger.warn(`no data by ${req.query.url}`)
                 res.status(404).end(`no data by ${req.query.url}`)
             } else {
-                logger.info(data)
+                logger.debug(data)
                 res.send(JSON.stringify(data)).end();
             }
 
