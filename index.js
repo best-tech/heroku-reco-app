@@ -28,6 +28,7 @@ const inputSize = 416;
 let loaded = false
 
 const scoreThreshold = 0.5;
+
 function getFaceDetectorOptions(net) {
     return net === faceapi.nets.ssdMobilenetv1
         ? new faceapi.SsdMobilenetv1Options({minConfidence: minConfidence})
@@ -56,7 +57,7 @@ async function loadModels() {
 
 }
 
-async function getByUrl(url, reco = false) {
+async function getByUrl(url, reco = '0') {
     let img;
 
     try {
@@ -67,16 +68,24 @@ async function getByUrl(url, reco = false) {
     }
 
     const data = []
-    if (reco) {
+    if (reco === '1') {
         const results = await faceapi.detectAllFaces(img, faceDetectionOptions)
             .withFaceLandmarks()
             .withFaceDescriptors()
-
-
         results.forEach(result => {
             const {age, gender, genderProbability} = result
             data.push(result.descriptor)
         })
+    } else if (reco === '2') {
+
+        const results = await faceapi.detectAllFaces(img, faceDetectionOptions)
+            .withFaceLandmarks()
+            .withAgeAndGender()
+            .withFaceDescriptors()
+        results.forEach(result => {
+            data.push(result)
+        })
+
     } else {
         const results = await faceapi.detectAllFaces(img, faceDetectionOptions)
             .withFaceLandmarks()
