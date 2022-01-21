@@ -9,7 +9,7 @@
     "canvas": "^2.6.1",
     "express": "^4.17.1",
     "face-api.js": "^0.22.2",
-    "log4js": "^6.2.1",
+    "log4js": "^6.4.0",
     "node-fetch": "^2.6.1",
     "typescript": "^3.8.3"
   },
